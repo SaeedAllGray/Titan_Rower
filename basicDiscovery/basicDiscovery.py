@@ -29,26 +29,37 @@ from AWSIoTPythonSDK.exception.AWSIoTExceptions import DiscoveryInvalidRequestEx
 AllowedActions = ['both', 'publish', 'subscribe']
 
 # General message notification callback
+
+
 def customOnMessage(message):
-    print('Received message on topic %s: %s\n' % (message.topic, message.payload))
+    print('Received message on topic %s: %s\n' %
+          (message.topic, message.payload))
+
 
 MAX_DISCOVERY_RETRIES = 10
 GROUP_CA_PATH = "./groupCA/"
 
 # Read in command-line parameters
 parser = argparse.ArgumentParser()
-parser.add_argument("-e", "--endpoint", action="store", required=True, dest="host", help="Your AWS IoT custom endpoint")
-parser.add_argument("-r", "--rootCA", action="store", required=True, dest="rootCAPath", help="Root CA file path")
-parser.add_argument("-c", "--cert", action="store", dest="certificatePath", help="Certificate file path")
-parser.add_argument("-k", "--key", action="store", dest="privateKeyPath", help="Private key file path")
-parser.add_argument("-n", "--thingName", action="store", dest="thingName", default="Bot", help="Targeted thing name")
-parser.add_argument("-t", "--topic", action="store", dest="topic", default="sdk/test/Python", help="Targeted topic")
+parser.add_argument("-e", "--endpoint", action="store", required=True,
+                    dest="host", help="Your AWS IoT custom endpoint")
+parser.add_argument("-r", "--rootCA", action="store",
+                    required=True, dest="rootCAPath", help="Root CA file path")
+parser.add_argument("-c", "--cert", action="store",
+                    dest="certificatePath", help="Certificate file path")
+parser.add_argument("-k", "--key", action="store",
+                    dest="privateKeyPath", help="Private key file path")
+parser.add_argument("-n", "--thingName", action="store",
+                    dest="thingName", default="Bot", help="Targeted thing name")
+parser.add_argument("-t", "--topic", action="store", dest="topic",
+                    default="sdk/test/Python", help="Targeted topic")
 parser.add_argument("-m", "--mode", action="store", dest="mode", default="both",
-                    help="Operation modes: %s"%str(AllowedActions))
+                    help="Operation modes: %s" % str(AllowedActions))
 parser.add_argument("-M", "--message", action="store", dest="message", default="Hello World!",
                     help="Message to publish")
-#--print_discover_resp_only used for delopyment testing. The test run will return 0 as long as the SDK installed correctly.
-parser.add_argument("-p", "--print_discover_resp_only", action="store_true", dest="print_only", default=False)
+# --print_discover_resp_only used for delopyment testing. The test run will return 0 as long as the SDK installed correctly.
+parser.add_argument("-p", "--print_discover_resp_only",
+                    action="store_true", dest="print_only", default=False)
 
 args = parser.parse_args()
 host = args.host
@@ -61,11 +72,13 @@ topic = args.topic
 print_only = args.print_only
 
 if args.mode not in AllowedActions:
-    parser.error("Unknown --mode option %s. Must be one of %s" % (args.mode, str(AllowedActions)))
+    parser.error("Unknown --mode option %s. Must be one of %s" %
+                 (args.mode, str(AllowedActions)))
     exit(2)
 
 if not args.certificatePath or not args.privateKeyPath:
-    parser.error("Missing credentials for authentication, you must specify --cert and --key args.")
+    parser.error(
+        "Missing credentials for authentication, you must specify --cert and --key args.")
     exit(2)
 
 if not os.path.isfile(rootCAPath):
@@ -84,7 +97,8 @@ if not os.path.isfile(privateKeyPath):
 logger = logging.getLogger("AWSIoTPythonSDK.core")
 logger.setLevel(logging.DEBUG)
 streamHandler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
@@ -94,7 +108,8 @@ backOffCore = ProgressiveBackOffCore()
 # Discover GGCs
 discoveryInfoProvider = DiscoveryInfoProvider()
 discoveryInfoProvider.configureEndpoint(host)
-discoveryInfoProvider.configureCredentials(rootCAPath, certificatePath, privateKeyPath)
+discoveryInfoProvider.configureCredentials(
+    rootCAPath, certificatePath, privateKeyPath)
 discoveryInfoProvider.configureTimeout(10)  # 10 sec
 
 retryCount = MAX_DISCOVERY_RETRIES if not print_only else 1
@@ -110,7 +125,8 @@ while retryCount != 0:
         # We only pick the first ca and core info
         groupId, ca = caList[0]
         coreInfo = coreList[0]
-        print("Discovered GGC: %s from Group: %s" % (coreInfo.coreThingArn, groupId))
+        print("Discovered GGC: %s from Group: %s" %
+              (coreInfo.coreThingArn, groupId))
 
         print("Now we persist the connectivity/identity information...")
         groupCA = GROUP_CA_PATH + groupId + "_CA_" + str(uuid.uuid4()) + ".crt"
@@ -139,15 +155,17 @@ while retryCount != 0:
         backOffCore.backOff()
 
 if not discovered:
-    # With print_discover_resp_only flag, we only woud like to check if the API get called correctly. 
+    # With print_discover_resp_only flag, we only woud like to check if the API get called correctly.
     if print_only:
         sys.exit(0)
-    print("Discovery failed after %d retries. Exiting...\n" % (MAX_DISCOVERY_RETRIES))
+    print("Discovery failed after %d retries. Exiting...\n" %
+          (MAX_DISCOVERY_RETRIES))
     sys.exit(-1)
 
 # Iterate through all connection options for the core and use the first successful one
 myAWSIoTMQTTClient = AWSIoTMQTTClient(clientId)
-myAWSIoTMQTTClient.configureCredentials(groupCA, privateKeyPath, certificatePath)
+myAWSIoTMQTTClient.configureCredentials(
+    groupCA, privateKeyPath, certificatePath)
 myAWSIoTMQTTClient.onMessage = customOnMessage
 
 connected = False
@@ -177,12 +195,23 @@ time.sleep(2)
 loopCount = 0
 while True:
     if args.mode == 'both' or args.mode == 'publish':
-        message = {}
-        message['message'] = args.message
-        message['sequence'] = loopCount
+        value = [6, 3, 2]
+        # message = {}
+        message = {"Group": "Gtest", "sensorValues": {
+            "x": value[0], "y": value[1], "z": value[2]}}
+        # message['message'] = args.message
+        # message['sequence'] = loopCount
         messageJson = json.dumps(message)
         myAWSIoTMQTTClient.publish(topic, messageJson, 0)
         if args.mode == 'publish':
             print('Published topic %s: %s\n' % (topic, messageJson))
+            print('The value of X is: ',
+                  message['sensorValues']['x'])
+            print('The value of Y is: ',
+                  message['sensorValues']['y'])
+            print('The value of Z is: ',
+                  message['sensorValues']['z'])
+            print('The sum is: ', message['sensorValues']['x']+message
+                  ['sensorValues']['y']+message['sensorValues']['z'])
         loopCount += 1
     time.sleep(1)
