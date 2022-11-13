@@ -26,14 +26,27 @@ from AWSIoTPythonSDK.core.protocol.connection.cores import ProgressiveBackOffCor
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 from AWSIoTPythonSDK.exception.AWSIoTExceptions import DiscoveryInvalidRequestException
 
+import random
+
 AllowedActions = ['both', 'publish', 'subscribe']
 
 # General message notification callback
 
 
 def customOnMessage(message):
-    print('Received message on topic %s: %s\n' %
+    print('Received message on topic %s: %s' %
           (message.topic, message.payload))
+
+    messageDecoded = json.loads(message.payload)
+
+    print('The value of X is: ',
+          messageDecoded['sensorValues']['x'])
+    print('The value of Y is: ',
+          messageDecoded['sensorValues']['y'])
+    print('The value of Z is: ',
+          messageDecoded['sensorValues']['z'])
+    print('The sum is: ', messageDecoded['sensorValues']['x'] +
+          messageDecoded['sensorValues']['y'] + messageDecoded['sensorValues']['z'])
 
 
 MAX_DISCOVERY_RETRIES = 10
@@ -192,26 +205,19 @@ if args.mode == 'both' or args.mode == 'subscribe':
     myAWSIoTMQTTClient.subscribe(topic, 0, None)
 time.sleep(2)
 
-loopCount = 0
 while True:
     if args.mode == 'both' or args.mode == 'publish':
-        value = [6, 3, 2]
-        # message = {}
-        message = {"Group": "Gtest", "sensorValues": {
+
+        # generate random num from 1 to 100
+        value = []
+        for i in range(3):
+            value.append(random.randrange(1, 100))
+
+        # pack & publish the message
+        message = {"Group": "G06", "sensorValues": {
             "x": value[0], "y": value[1], "z": value[2]}}
-        # message['message'] = args.message
-        # message['sequence'] = loopCount
         messageJson = json.dumps(message)
         myAWSIoTMQTTClient.publish(topic, messageJson, 0)
         if args.mode == 'publish':
             print('Published topic %s: %s\n' % (topic, messageJson))
-            print('The value of X is: ',
-                  message['sensorValues']['x'])
-            print('The value of Y is: ',
-                  message['sensorValues']['y'])
-            print('The value of Z is: ',
-                  message['sensorValues']['z'])
-            print('The sum is: ', message['sensorValues']['x']+message
-                  ['sensorValues']['y']+message['sensorValues']['z'])
-        loopCount += 1
     time.sleep(1)

@@ -1,0 +1,67 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Publisher",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/basicDiscovery.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--endpoint",
+                "a5snnrsfqks2n-ats.iot.eu-central-1.amazonaws.com",
+                "--rootCA",
+                "AmazonRootCA1.pem",
+                "--cert",
+                "0e96553588cda650530439bbf11ec9d02bd6f050ec3058a429be802d66f24563-certificate.pem.crt",
+                "--key",
+                "0e96553588cda650530439bbf11ec9d02bd6f050ec3058a429be802d66f24563-private.pem.key",
+                "--thingName",
+                "PublisherG06",
+                "--topic",
+                "greengrass/group06",
+                "--mode",
+                "publish",
+                "--message",
+                "Guren Tag! Sent from PublisherG06"
+            ],
+            // "argsExpansion": "none",
+            "justMyCode": true
+        },
+        {
+            "name": "Subscriber",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/basicDiscovery.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--endpoint",
+                "a5snnrsfqks2n-ats.iot.eu-central-1.amazonaws.com",
+                "--rootCA",
+                "AmazonRootCA1.pem",
+                "--cert",
+                "31f08dd056fa78e924e1f6b3886d50e44fa6749194f7290c6ac0684c7547bded-certificate.pem.crt",
+                "--key",
+                "31f08dd056fa78e924e1f6b3886d50e44fa6749194f7290c6ac0684c7547bded-private.pem.key",
+                "--thingName",
+                "SubscriberG06",
+                "--topic",
+                "greengrass/group06",
+                "--mode",
+                "subscribe"
+            ],
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
