@@ -2,6 +2,12 @@
 
 ## Milestone 1
 
+* Screenshots
+  * Greengrass group  
+    ![GG group](doc/1_GGgroup.png)
+  * Message publish & subscribe  
+    ![message publish & subscribe](doc/1_pub_sub.png)
+
 * Greengrass is an Edge or cloud computing service? Explain briefly your answer.
   * an edge computing runtime & a cloud service
   * consist of:
@@ -57,22 +63,34 @@
 
 * What types of elements can be chosen from the AWS IoT console when you create a new subscription in a greengrass group.
   * for each subscription we can choose a source, a target and Greengrass topic(s).
-    * source / target: a lambda function, a service, a client device or a connector.
+    * source / target: a lambda function, a service, a client device or a connector
     * Greengrass topics: formatted with a 'topic filter'
 
 * What are the Greengrass topics?
   * They are MQTT topics
     * a string that serves as an identifier for MQTT messages
-    * device can publish & subscribe messages with a particular topic that it desires
+    * device can publish & subscribe messages with particular topics that it desires
 
 * Can a device act as publisher and subscriber in different GG topics? If yes, how?
   * Yes
   1. add new subscriptions in AWS console
-     * set the device as a source
-  2. 
+     * set the device as a source with a topic in a sub., but as a target with another topic in another sub.
+  2. run a local programme in the device (e.g., basicDiscovery.py) that publish & subscribe the topics at the same time
 
 * Can multiple devices be subscribed to the same publisher? If yes, how?
+  * Yes
+  1. add new subscriptions in AWS console, with these devices set as the targets, and set the source as the same publisher
+  2. run a local programme on these devices that subscribe for the topics from the publisher.
 
 * What is the discovery service?
+  * Reference: <https://docs.aws.amazon.com/greengrass/v1/developerguide/gg-discover-api.html>
+  * a cloud service
+  * a Greengrass client device always starts the discovery before connecting to the Greengrass core
+  * The service provide necessary information for communication with the Greengrass core, e.g.:
+    * The group(s) to which the device belongs
+    * The IP address and port for the Greengrass core in the group
+    * The group CA certificate, which can be used to authenticate the Greengrass core device.
 
 * Why do you need to specify your aws end point while running the discovery service?
+  * The service is provided by an AWS cloud server
+  * the 'end point' informs the the device where the AWS cloud server is
