@@ -2,6 +2,8 @@
 
 ## Milestone 1
 
+### Assignment
+
 * Screenshots
   * Greengrass group  
     ![GG group](doc/1_GGgroup.png)
@@ -94,3 +96,20 @@
 * Why do you need to specify your aws end point while running the discovery service?
   * The service is provided by an AWS cloud server
   * the 'end point' informs the the device where the AWS cloud server is
+
+### Presentation
+
+* Reference: <https://docs.aws.amazon.com/greengrass/v1/developerguide/module1.html>
+
+* Install AWS Greengrass Core V1 on EC2 virtual machine and set up the network settings (Module 1)
+
+* Create 1 Greengrass Core (GreengrassCore06) & 2 Greengrass Device (PublisherG06 & SubscriberG06) under AWS IoT Things <https://eu-central-1.console.aws.amazon.com/iot/home?region=eu-central-1#/thinghub>; all Things come with certificates and I've put those in the OneDrive folder above (Module 2, 4)
+
+* Create 1 Greengrass Group V1 (GreengrassGroup06) and put the 3 Things above inside. <https://eu-central-1.console.aws.amazon.com/iot/home?region=eu-central-1#/greengrass/groups/7c306694-9437-4a83-9b3d-d963159936d8> (Module 2)
+
+* Set up the MQTT topic subscription of greengrass/group06 <https://eu-central-1.console.aws.amazon.com/iot/home?region=eu-central-1#/greengrass/groups/7c306694-9437-4a83-9b3d-d963159936d8/subscriptions> (Module 2)
+
+* Get `basicDiscovery.py` from <https://docs.aws.amazon.com/greengrass/v1/developerguide/IoT-SDK.html>
+  * copy certificates into the same folder as `basicDiscovery.py`
+  * edit main function for MQTT publication on the message being published
+  * edit `def customOnMessage()` for MQTT subscription callback, which would decode the message into a list of x, y & z
