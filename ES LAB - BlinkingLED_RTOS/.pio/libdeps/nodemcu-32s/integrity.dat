@@ -1,0 +1,4 @@
+Wire
+ArduinoJson
+256dpi/MQTT@^2.4.7
+pololu/OPT3101@^1.0.0
