@@ -28,8 +28,11 @@
 #define SECRET
 #define THINGNAME "Tank8964"
 
-const char WIFI_SSID[] = "BNN_Internet";
-const char WIFI_PASSWORD[] = "m2m2m2m2";
+const char WIFI_SSID[] = "eduroam";
+const char EAP_ANONYMOUS_IDENTITY[] = "eduroam@fh-dortmund.de";
+const char EAP_IDENTITY[] = "mang001";
+// const char EAP_PASSWORD[] = "no, this is not my real password";
+
 const char AWS_IOT_ENDPOINT[] = "a5snnrsfqks2n-ats.iot.eu-central-1.amazonaws.com";
 
 /* Amazon Root CA 1 */

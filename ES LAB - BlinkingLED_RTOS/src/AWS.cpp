@@ -1,14 +1,13 @@
 /**
  * ESP32 AWS Library
- * 
+ *
  * Functions to get the crawler coordinates from the Camera over AWS IoT
- * 
+ *
  * Authors: Vipul Deshpande, Jaime Burbano
- * 
+ *
  * Reference:
  * https://aws.amazon.com/blogs/compute/building-an-aws-iot-core-device-using-aws-serverless-and-an-esp32/
  */
-
 
 /*
   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -33,33 +32,38 @@
 #include "AWS.h"
 
 /* The MQTT topics that this device should publish/subscribe to */
-#define AWS_IOT_PUBLISH_TOPIC   "tank/pub" 
+#define AWS_IOT_PUBLISH_TOPIC "tank/pub"
 #define AWS_IOT_SUBSCRIBE_TOPIC "tank/target"
 
 WiFiClientSecure net = WiFiClientSecure();
 MQTTClient client = MQTTClient(256);
 
-myawsclass::myawsclass() {
-
+myawsclass::myawsclass()
+{
 }
 
-
-void messageHandler(String &topic, String &payload) {
+void messageHandler(String &topic, String &payload)
+{
   Serial.println("incoming: " + topic + " - " + payload);
 
-//  StaticJsonDocument<200> doc;
-//  deserializeJson(doc, payload);
-//  const char* message = doc["message"];
+  StaticJsonDocument<50> doc;
+  deserializeJson(doc, payload);
+  const char *message = doc["message"];
+
+  Serial.println(message);
 }
 
-void myawsclass::stayConnected() {
+void myawsclass::stayConnected()
+{
   client.loop();
 }
 
-void myawsclass::connectAWS() {
+void myawsclass::connectAWS()
+{
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  // WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  WiFi.begin(WIFI_SSID, WPA2_AUTH_PEAP, EAP_ANONYMOUS_IDENTITY, EAP_IDENTITY, EAP_PASSWORD);
 
   Serial.println("Connecting to Wi-Fi");
 
@@ -73,7 +77,7 @@ void myawsclass::connectAWS() {
     cursor_id = (cursor_id + 1) % 4;
   }
 
-  Serial.print("CONNECTED...!\n");
+  Serial.println("\r\nCONNECTED!");
 
   /* Configure WiFiClientSecure to use the AWS IoT device credentials */
   net.setCACert(AWS_CERT_CA);
@@ -86,14 +90,15 @@ void myawsclass::connectAWS() {
   /* Create a message handler */
   client.onMessage(messageHandler);
 
-  Serial.print("Connecting to AWS IOT");
+  Serial.println("Connecting to AWS IOT");
 
-  while (!client.connect(THINGNAME)) {
+  while (!client.connect(THINGNAME))
+  {
     Serial.print(".");
     delay(100);
   }
 
-  if(!client.connected())
+  if (!client.connected())
   {
     Serial.println("AWS IoT Timeout!");
     return;
@@ -105,17 +110,18 @@ void myawsclass::connectAWS() {
   Serial.println("AWS IoT Connected!");
 }
 
-void myawsclass::publishMessage(int16_t sensorValue) {
+void myawsclass::publishMessage(int16_t sensorValue)
+{
 
-  StaticJsonDocument<200> doc;
-  //doc["time"] = millis();
+  // StaticJsonDocument<200> doc;
+  StaticJsonDocument<50> doc;
+  // doc["time"] = millis();
   doc["sensor"] = sensorValue;
   char jsonBuffer[512];
+  // char jsonBuffer[32];
   serializeJson(doc, jsonBuffer); /* print to client */
 
   client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
 }
 
-myawsclass awsobject = myawsclass();  /* creating an object of class aws */
-
-
+myawsclass awsobject = myawsclass(); /* creating an object of class aws */
