@@ -36,27 +36,33 @@ void setup()
       NULL); /* Task handle. */
 
   Serial.begin(921600);
+  // Serial.begin(9600);
   sensors.SETUP();
-
-  // connect Wi-Fi & AWS
-  aws.connectAWS();
 
   // demo motor
   motor.SETUP();
-  motor.set_speed(MotorA, Forward, 127);
-  motor.set_speed(MotorB, Backward, 127);
-  delay(750);
-  motor.set_speed(MotorA, Backward, 127);
-  motor.set_speed(MotorB, Forward, 127);
-  delay(750);
-  motor.set_speed(MotorA, Forward, 127);
-  motor.set_speed(MotorB, Forward, 127);
-  delay(750);
-  motor.set_speed(MotorA, Backward, 127);
-  motor.set_speed(MotorB, Backward, 127);
-  delay(750);
+
+  // demo obstacle detection
+  // motor move forward
+  motor.set_speed(MotorA, Forward, 255);
+  motor.set_speed(MotorB, Backward, 255);
+  int16_t *value;
+  do
+  {
+    value = sensors.reading();
+  } while (value[0] >= 0 or value[1] >= 0 or value[2] >= 0); // obstacle not detected
+
+  // motor move backward for 10 sec
+  motor.set_speed(MotorA, Backward, 96);
+  motor.set_speed(MotorB, Forward, 96);
+  delay(10000);
+
+  // motor stop
   motor.set_speed(MotorA, Forward, 0);
   motor.set_speed(MotorB, Backward, 0);
+
+  // connect Wi-Fi & AWS
+  aws.connectAWS();
 }
 
 void loop()

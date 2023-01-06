@@ -110,13 +110,29 @@ void myawsclass::connectAWS()
   Serial.println("AWS IoT Connected!");
 }
 
-void myawsclass::publishMessage(int16_t sensorValue)
+// void myawsclass::publishMessage(int16_t sensorValue)
+// {
+
+//   // StaticJsonDocument<200> doc;
+//   StaticJsonDocument<50> doc;
+//   // doc["time"] = millis();
+//   doc["sensor"] = sensorValue;
+//   char jsonBuffer[512];
+//   // char jsonBuffer[32];
+//   serializeJson(doc, jsonBuffer); /* print to client */
+
+//   client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
+// }
+
+void myawsclass::publishMessage(int16_t sen0, int16_t sen1, int16_t sen2)
 {
 
   // StaticJsonDocument<200> doc;
   StaticJsonDocument<50> doc;
   // doc["time"] = millis();
-  doc["sensor"] = sensorValue;
+  doc["sensor0"] = sen0;
+  doc["sensor1"] = sen1;
+  doc["sensor2"] = sen2;
   char jsonBuffer[512];
   // char jsonBuffer[32];
   serializeJson(doc, jsonBuffer); /* print to client */
