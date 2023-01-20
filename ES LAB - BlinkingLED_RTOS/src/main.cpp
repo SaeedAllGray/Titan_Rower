@@ -2,7 +2,7 @@
 // #include "AWS.h"
 #include "motorDriver.h"
 #include "sensorDriver.h"
-#include "coordinate.h"
+#include "environment.h"
 
 enum class led_mode_t
 {
@@ -18,10 +18,7 @@ void taskOne(void *parameter);
 
 // myawsclass aws = myawsclass();
 
-mclass motor = mclass();
-sclass sensors = sclass();
-Coordinate currentPosition = Coordinate(0, 0);
-Coordinate targetPosition = Coordinate(10, 20);
+Environment env = Environment();
 
 void setup()
 {
@@ -41,9 +38,9 @@ void setup()
 
   Serial.begin(921600);
   // Serial.begin(9600);
-  sensors.SETUP();
+  env.sensors.SETUP();
   // demo motor
-  motor.SETUP();
+  env.motor.SETUP();
 
   // demo obstacle detection
   // motor move forward
@@ -54,22 +51,6 @@ void setup()
   //   value = sensors.reading();
   // } while (value[0] >= 0 or value[1] >= 0 or value[2] >= 0); // obstacle not detected
 
-  // motor move backward for 10 sec
-
-  do
-  {
-    motor.set_speed(MotorB, Forward, 96);
-    motor.set_speed(MotorA, Forward, 96);
-    Serial.println(currentPosition.x);
-
-    delay(300);
-  } while (currentPosition.angleWithTarget(targetPosition) != 0);
-  motor.set_speed(MotorB, Forward, 0);
-  motor.set_speed(MotorA, Backward, 0);
-  // motor.set_speed(MotorB, Forward, 96);
-
-  // motor stop
-
   // connect Wi-Fi & AWS
   // aws.connectAWS();
 }
@@ -79,11 +60,11 @@ void loop()
   // const int CH_NUM = 3;
 
   // 0: left, 1: centre, 2: right (on the side with Pololu logo)
-  int16_t *value = sensors.reading();
+  // int16_t *value = sensors.reading();
 
   // (reading() returns value + 100) mm = distance from the edge of the board
   // I don't know why but the value sometimes become around -1000
-  Serial.printf("\r% 5d % 5d % 5d", value[0], value[1], value[2]);
+  // Serial.printf("\r% 5d % 5d % 5d", value[0], value[1], value[2]);
 
   // aws.publishMessage(8964);
   // aws.publishMessage(value[0], value[1], value[2]);
