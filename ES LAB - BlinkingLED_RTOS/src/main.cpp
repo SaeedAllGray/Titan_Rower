@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "AWS.h"
-#include "motorDriver.h"
-#include "sensorDriver.h"
+#include "environment.h"
 
 enum class led_mode_t
 {
@@ -16,8 +15,7 @@ bool led_state = LOW;
 void taskOne(void *parameter);
 
 myawsclass aws = myawsclass();
-mclass motor = mclass();
-sclass sensors = sclass();
+Environment env = Environment();
 
 void setup()
 {
@@ -36,10 +34,8 @@ void setup()
       NULL); /* Task handle. */
 
   Serial.begin(921600);
-  // sensors.SETUP();
-
-  // // demo motor
-  // motor.SETUP();
+  env.sensors.SETUP();
+  env.motor.SETUP();
   
   // // height: 45 mm
   // // on fully-charged NiMH batteries
@@ -85,18 +81,17 @@ void setup()
 
 void loop()
 {
-  // // const int CH_NUM = 3;
+  // const int CH_NUM = 3;
 
-  // // 0: left, 1: centre, 2: right (on the side with Pololu logo)
+  // 0: left, 1: centre, 2: right (on the side with Pololu logo)
   // int16_t *value = sensors.reading();
 
-  // // (reading() returns value + 100) mm = distance from the edge of the board
-  // // I don't know why but the value sometimes become around -1000
+  // (reading() returns value + 100) mm = distance from the edge of the board
+  // I don't know why but the value sometimes become around -1000
   // Serial.printf("\r% 5d % 5d % 5d", value[0], value[1], value[2]);
+
+  aws.publishMessage(8964);
   // aws.publishMessage(value[0], value[1], value[2]);
-
-  // aws.publishMessage(8964);
-
   aws.stayConnected();
   delay(1000);
 }
