@@ -114,5 +114,14 @@
   * edit main function for MQTT publication on the message being published
   * edit `def customOnMessage()` for MQTT subscription callback, which would decode the message into a list of x, y & z
   
-## Milestone 2
-
+## Milestone 3
+1. What is the secret.h file?
+The Secrets.h file is a header file
+   * It contains sensitive information
+    Information includes:
+        * Wi-Fi SSID
+        * Credentials for connecting to Wi-Fi
+        * Amazon Root CA certificate
+        * Device private key
+        * Device public key
+    Used for connecting the ESP32 to a Wi-Fi network and AWS Greengrass.
