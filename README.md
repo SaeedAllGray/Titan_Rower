@@ -113,3 +113,6 @@
   * copy certificates into the same folder as `basicDiscovery.py`
   * edit main function for MQTT publication on the message being published
   * edit `def customOnMessage()` for MQTT subscription callback, which would decode the message into a list of x, y & z
+  
+## Milestone 2
+
