@@ -36,30 +36,48 @@ void setup()
       NULL); /* Task handle. */
 
   Serial.begin(921600);
-  // Serial.begin(9600);
-  sensors.SETUP();
+  // sensors.SETUP();
 
-  // demo motor
-  motor.SETUP();
+  // // demo motor
+  // motor.SETUP();
+  
+  // // height: 45 mm
+  // // on fully-charged NiMH batteries
+  // // motor A (255, Forward):  47     rpm
+  // // motor B (255, Backward): 46 1/2 rpm
+  // // motor B (127, Backward): 22 1/4 rpm
+  // // motor B (63, Backward):  10     rpm
+  // // motor B can still spin backwards at speed = 20, but not 15
+  // // motor B Backward regression: y = 0.19001x - 1.93499
 
-  // demo obstacle detection
-  // motor move forward
-  motor.set_speed(MotorA, Forward, 255);
-  motor.set_speed(MotorB, Backward, 255);
-  int16_t *value;
-  do
-  {
-    value = sensors.reading();
-  } while (value[0] >= 0 or value[1] >= 0 or value[2] >= 0); // obstacle not detected
+  // // forward 1m
+  // motor.set_speed(MotorB, Backward, 63);
+  // motor.set_speed(MotorA, Forward, 63);
+  // sleep(10); // 255: 95cm; 127: 43mm; 63: 17.8 mm
+  // // // backward 1m
+  // // spin 360deg
+  // motor.set_speed(MotorB, Backward, 0);
+  // motor.set_speed(MotorA, Forward, 0);
 
-  // motor move backward for 10 sec
-  motor.set_speed(MotorA, Backward, 96);
-  motor.set_speed(MotorB, Forward, 96);
-  delay(10000);
+  // // demo obstacle detection
+  // // motor move forward
+  // motor.set_speed(MotorA, Forward, 255);
+  // motor.set_speed(MotorB, Backward, 255);
+  // int16_t *value;
+  // do
+  // {
+  //   value = sensors.reading();
+  // } while (value[0] >= 0 or value[1] >= 0 or value[2] >= 0); // obstacle not detected
 
-  // motor stop
-  motor.set_speed(MotorA, Forward, 0);
-  motor.set_speed(MotorB, Backward, 0);
+  // // motor move backward for 10 sec
+  // motor.set_speed(MotorA, Backward, 96);
+  // motor.set_speed(MotorB, Forward, 96);
+  // Serial.println("WTF?!\r\n");
+  // delay(1000);
+
+  // // motor stop
+  // motor.set_speed(MotorA, Forward, 0);
+  // motor.set_speed(MotorB, Backward, 0);
 
   // connect Wi-Fi & AWS
   aws.connectAWS();
@@ -67,17 +85,18 @@ void setup()
 
 void loop()
 {
-  // const int CH_NUM = 3;
+  // // const int CH_NUM = 3;
 
-  // 0: left, 1: centre, 2: right (on the side with Pololu logo)
-  int16_t *value = sensors.reading();
+  // // 0: left, 1: centre, 2: right (on the side with Pololu logo)
+  // int16_t *value = sensors.reading();
 
-  // (reading() returns value + 100) mm = distance from the edge of the board
-  // I don't know why but the value sometimes become around -1000
-  Serial.printf("\r% 5d % 5d % 5d", value[0], value[1], value[2]);
+  // // (reading() returns value + 100) mm = distance from the edge of the board
+  // // I don't know why but the value sometimes become around -1000
+  // Serial.printf("\r% 5d % 5d % 5d", value[0], value[1], value[2]);
+  // aws.publishMessage(value[0], value[1], value[2]);
 
   // aws.publishMessage(8964);
-  aws.publishMessage(value[0], value[1], value[2]);
+
   aws.stayConnected();
   delay(1000);
 }

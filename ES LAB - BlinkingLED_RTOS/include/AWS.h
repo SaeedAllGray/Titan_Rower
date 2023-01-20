@@ -20,8 +20,8 @@ class myawsclass {
     myawsclass();
 
     void connectAWS();                            /* Initialize and connect to AWS */
-    // void publishMessage(int16_t sensorValue);     /* Publish the values of the sensors */
-    void publishMessage(int16_t sen0, int16_t sen1, int16_t sen2);
+    void publishMessage(int16_t sensorValue);     /* Publish the values of the sensors */
+    // void publishMessage(int16_t sen0, int16_t sen1, int16_t sen2);
     void stayConnected();                         /* Maintain the connection */
 };
 

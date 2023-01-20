@@ -230,7 +230,19 @@ if __name__ == "__main__":
 				#print("Target:", current_target_coordinate," my rover: ", my_rover_coordinates) #prints {"markerID":[(x coord,y coord), angle]} of the rover in the rectified ROI image
 		cv2.imshow("Rectified", warped) #uncomment
 		if connect_to_aws:
-			mes_rover = json.dumps({'rover': '{}'.format(my_rover_coordinates)})		
+			# mes_rover = json.dumps({'rover': '{}'.format(my_rover_coordinates)})
+
+			# I can't decode the coordinate on ESP32, that's why I changed its format to a simple array
+			# [x, y, theta]
+			# my_rover_coordinates[5] because our code is "ID: 5"
+			try:
+				coord_json = {'x':my_rover_coordinates[5][0][0],
+					'y':my_rover_coordinates[5][0][1],
+					't':my_rover_coordinates[5][1]}
+				mes_rover = json.dumps(coord_json)
+			except KeyError:
+				pass
+
 			myAWSIoTMQTTClient.publish(topic_rover, mes_rover, 1)	
 			mes_target = json.dumps({'target': '{}'.format(current_target_coordinate)})		
 			myAWSIoTMQTTClient.publish(topic_targer, mes_target, 1)	
