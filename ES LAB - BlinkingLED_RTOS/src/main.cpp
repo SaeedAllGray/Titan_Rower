@@ -1,7 +1,8 @@
 #include <Arduino.h>
-#include "AWS.h"
+// #include "AWS.h"
 #include "motorDriver.h"
 #include "sensorDriver.h"
+#include "coordinate.h"
 
 enum class led_mode_t
 {
@@ -15,9 +16,12 @@ bool led_state = LOW;
 
 void taskOne(void *parameter);
 
-myawsclass aws = myawsclass();
+// myawsclass aws = myawsclass();
+
 mclass motor = mclass();
 sclass sensors = sclass();
+Coordinate currentPosition = Coordinate(0, 0);
+Coordinate targetPosition = Coordinate(10, 20);
 
 void setup()
 {
@@ -38,31 +42,36 @@ void setup()
   Serial.begin(921600);
   // Serial.begin(9600);
   sensors.SETUP();
-
   // demo motor
   motor.SETUP();
 
   // demo obstacle detection
   // motor move forward
-  motor.set_speed(MotorA, Forward, 255);
-  motor.set_speed(MotorB, Backward, 255);
+
   int16_t *value;
-  do
-  {
-    value = sensors.reading();
-  } while (value[0] >= 0 or value[1] >= 0 or value[2] >= 0); // obstacle not detected
+  // do
+  // {
+  //   value = sensors.reading();
+  // } while (value[0] >= 0 or value[1] >= 0 or value[2] >= 0); // obstacle not detected
 
   // motor move backward for 10 sec
-  motor.set_speed(MotorA, Backward, 96);
-  motor.set_speed(MotorB, Forward, 96);
-  delay(10000);
+
+  do
+  {
+    motor.set_speed(MotorB, Forward, 96);
+    motor.set_speed(MotorA, Forward, 96);
+    Serial.println(currentPosition.x);
+
+    delay(300);
+  } while (currentPosition.angleWithTarget(targetPosition) != 0);
+  motor.set_speed(MotorB, Forward, 0);
+  motor.set_speed(MotorA, Backward, 0);
+  // motor.set_speed(MotorB, Forward, 96);
 
   // motor stop
-  motor.set_speed(MotorA, Forward, 0);
-  motor.set_speed(MotorB, Backward, 0);
 
   // connect Wi-Fi & AWS
-  aws.connectAWS();
+  // aws.connectAWS();
 }
 
 void loop()
@@ -77,8 +86,8 @@ void loop()
   Serial.printf("\r% 5d % 5d % 5d", value[0], value[1], value[2]);
 
   // aws.publishMessage(8964);
-  aws.publishMessage(value[0], value[1], value[2]);
-  aws.stayConnected();
+  // aws.publishMessage(value[0], value[1], value[2]);
+  // aws.stayConnected();
   delay(1000);
 }
 
