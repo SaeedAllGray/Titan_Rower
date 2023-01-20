@@ -8,10 +8,17 @@ public:
 
     Coordinate(int xin, int yin) : x(xin), y(yin) {}
 
-    int angleWithTarget(Coordinate point1)
+    int angleWithPoint(Coordinate point)
     {
-        float deltaY = (*this).y - point1.y;
-        float deltaX = (*this).x - point1.x;
+        float deltaY = (*this).y - point.y;
+        float deltaX = (*this).x - point.x;
         return int(atan(deltaY / deltaX));
+    }
+    double distanceFromPoint(Coordinate point)
+    {
+        double x2 = pow((*this).x - point.x,2);
+        double y2 = pow((*this).y - point.y, 2);
+
+        return sqrt(x2 + y2);
     }
 };

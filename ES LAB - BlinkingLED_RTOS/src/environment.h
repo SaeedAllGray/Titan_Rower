@@ -49,7 +49,7 @@ public:
             Serial.println(currentPosition.x);
 
             delay(300);
-        } while (currentPosition.angleWithTarget(targetPosition) != 0);
+        } while (currentPosition.angleWithPoint(targetPosition) != 0);
         motor.set_speed(MotorB, Forward, 0);
         motor.set_speed(MotorA, Backward, 0);
     }
@@ -63,7 +63,7 @@ public:
             Serial.println(currentPosition.x);
 
             delay(300);
-        } while (currentPosition.angleWithTarget(targetPosition) != 0);
+        } while (currentPosition.angleWithPoint(targetPosition) != 0);
         motor.set_speed(MotorB, Forward, 0);
         motor.set_speed(MotorA, Backward, 0);
     }
