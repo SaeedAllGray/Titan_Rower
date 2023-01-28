@@ -115,7 +115,9 @@
   * edit `def customOnMessage()` for MQTT subscription callback, which would decode the message into a list of x, y & z
   
 ## Milestone 3
+
 1. What is the secret.h file?
+
 The Secrets.h file is a header file
    * It contains sensitive information
     Information includes:
@@ -127,66 +129,91 @@ The Secrets.h file is a header file
     Used for connecting the ESP32 to a Wi-Fi network and AWS Greengrass.
    
 2. How did they use the AWS Library?
+
 AWS library for ESP32 can be used to connect the device to AWS IoT and interact with other AWS services.
-* The library can be downloaded and installed from the official AWS GitHub repository.
+* ~~The library can be downloaded and installed from the official AWS GitHub repository.~~
 * Once the library is installed, the developer can use the provided API to connect to AWS IoT, publish and subscribe to MQTT topics, access other AWS services like S3 and more.
-* The Secrets.h file should include AWS Root CA certificate, device private key and public key as well as the endpoint for the authentication and secure communication process.
+* ~~The Secrets.h file should include AWS Root CA certificate, device private key and public key as well as the endpoint for the authentication and secure communication process.~~
 
 3. What are the topics esp32/rover and esp32/target being used for?
 
-* "esp32/rover" topic is likely used for publishing sensor data and current status of the Rover.
-* "esp32/target" topic is likely used for receiving goal coordinates or instructions from the AWS Greengrass to reach a certain target.
+* "esp32/rover" topic is ~~likely used for publishing sensor data and current status of the Rover.~~
+ * source: published by the python programme in the VirtualBox VM
+ * message: position & direction with respective to the game field
+   * from image processing of the webcam image
+ * usage: feedback of rover position
+* "esp32/target" topic is likely used for receiving goal coordinates ~~or instructions from the AWS Greengrass~~ to reach a certain target.
+  * source: by the same python programme as above
+  * goal coordinate as specified in scenario1.jpg (or anything else being called under the argument `-i something.jpg` with the python script)
+    * in the demo code, there is only 1 goal at a time; once the rover arrived the current code, the demo code with update the next goal, but we would like to change the content to an array of goals
 * These topics can be used to exchange data between the ESP32 and AWS Greengrass in order to achieve the obstacle avoidance and goal-reaching behavior of the Rover
 
-4. What changes should we make in the secrets.h file in order for the ESP32 to connect to
-AWS?
-The changes made to the secrets.h file are for connecting the ESP32 to a Wi-Fi network and enabling it to interact with AWS IoT services. 
+4. What changes should we make in the secrets.h file in order for the ESP32 to connect to AWS?
+
+To connect to The changes made to the secrets.h file are for connecting the ESP32 to a Wi-Fi network and enabling it to interact with AWS IoT services. 
 We had to update:
 WIFI_SSID
 WIFI_PASSWORD
 
-in our case we had to go with slightly different inputs
+~~in our case~~To connect `eduroam` (which uses WPA Enterprise), we had to go with slightly different inputs
 WIFI_SSIDD
 EAP_ANONYMOUS_IDENTITY
 EAP_IDENTITY
 
+In `AWS.cpp` we also changed WiFi.begin() to call the WPA Enterprise API.
+
 5. What happens if we do not provide the AWS endpoint?
-Without the endpoint, the ESP32 will not be able to connect to the AWS IoT service, and will not be able to publish or subscribe to MQTT topics or access other AWS services.
 
-6. Can we Publish anything from the ESP32 onto AWS?
-Yes, once the ESP32 is connected to AWS IoT service, it can publish data to specific MQTT topics on the AWS IoT service. The data can be sensor data, status updates, or any other information that is relevant to the project. The ESP32 can also subscribe to topics to receive data or instructions from the AWS IoT service.
+Without the endpoint, the ESP32 will not be able to connect to the AWS IoT service, and will not be able to get the IP address of the MQTT broker, publish or subscribe to MQTT topics or access other AWS services.
 
-7. What changes do we need to make in the code in order to publish from the rover to
-AWS?
+6. Can we publish anything from the ESP32 onto AWS?
+
+Yes, once the ESP32 is connected to AWS IoT service, it can publish data to specific MQTT topics on the AWS IoT service. ~~The data can be sensor data, status updates, or any other information that is relevant to the project. The ESP32 can also subscribe to topics to receive data or instructions from the AWS IoT service.~~ However, we are not planning to publish anything from ESP32 currently.
+
+7. What changes do we need to make in the code in order to publish from the rover to AWS?
+
+We can use the function `myawsclass::publishMessage()` in `main.cpp` (e.g. in loop(), where it reads sensor data and put that on publishMessage()) in ESP32 to publish something.
 
 8. What is the importance of the stayConnected() method?
 
-The stayConnected() method is used to maintain an active connection to the AWS IoT service, ensuring that the device can send and receive data and function properly.
+~~The stayConnected() method is used to maintain an active connection to the AWS IoT service, ensuring that the device can send and receive data and function properly.~~
+
+* <https://ubidots.com/community/t/solved-what-is-the-function-of-client-loop/913>
+* allow the client to process incoming messages to send publish data and makes a refresh of the connection
 
 9. Why are we using AWS IoT instead of AWS GG?
 
-We are not using AWS IOT because we found the computing speed for Image processing is better on VM run on the local machine and we then transfer the output data to AWS GG.
+We uses AWS IoT service (cloud service) to configure the let devices to discover the IP address of other devices / Greengrass core, and configure the MQTT messages being transferred.
+
+We uses GG as a MQTT brokers to exchange data.
+
+We are not using AWS IoT because the data (image) transfer is slow and has a large bandwidth, and we are not using the Greengrass core because the GG core we used is rather weak (AWS EC2 t2.micro has 1 CPU core & 1 GB RAM only), and we found the computing speed for image processing is better on VM run on the local machine. We then transfer the ~~output~~ processed data to the rover through AWS GG.
 
 10. Can a device act as both the Publisher and Subscriber? If yes, how?
 
 Yes, a device can act as both a publisher and a subscriber in the context of AWS Greengrass. Once the device is connected to the AWS Greengrass, it can use the publish and subscribe APIs provided by the AWS IoT SDK to send and receive data over the local MQTT message broker.
-This allows for local communication between devices and the ability to process data, make decisions and take actions while disconnected from the internet.
-The device can publish data to specific MQTT topics and subscribe to receive updates or instructions from other devices or the cloud.
+~~This allows for local communication between devices and the ability to process data, make decisions and take actions while disconnected from the internet.
+The device can publish data to specific MQTT topics and subscribe to receive updates or instructions from other devices or the cloud.~~
+
+For example, on ESP32,`MQTTClient::publish(TOPIC_NAME, message_buffer)` and `MQTTClient::subscribe(TOPIC_NAME)` can be used to configure the topic being published/subscribed, and `stayConnected()` to update the data to the MQTT broker. Also, under AWS IOT Greengrass group setting, subscriptions to & from the device have to be set corrospondingly.
 
 11. What do we mean by the devices and topics in AWS IoT?
 
 In AWS IoT, "Devices" refer to the physical or virtual Internet-connected devices that interact with the AWS IoT service and 
 "Topics" refer to the channels of communication that devices use to send and receive data over the MQTT protocol. Each device can publish data to a specific topic or subscribe to a topic to receive data from other devices. This allows for organized and filtered data communication between the devices and the AWS cloud.
 
-12. What do we do if some student (from Group2) would like to receive the messages from
-certain camera (say Group1) on their ESP32?
+12. What do we do if some student (from Group2) would like to receive the messages from certain camera (say Group1) on their ESP32?
 
 If a student from Group2 would like to receive messages from a certain camera (from Group1) on their ESP32, the following steps can be taken:
 
-   * Make sure that the camera is configured to publish data to a specific topic on the AWS IoT service.
-   * Ensure that the student's ESP32 is properly configured and connected to the AWS IoT service.
-   * On the student's ESP32, use the subscribe API provided by the AWS IoT SDK to subscribe to the topic that the camera is publishing to.
-   * Once the ESP32 is subscribed to the topic, it will receive any data that is published to that topic by the camera.
-   * The student's ESP32 can then process or act on the received data as required.
+   * ~~Make sure that the camera is configured to publish data to a specific topic on the AWS IoT service.~~
+   * ~~Ensure that the student's ESP32 is properly configured and connected to the AWS IoT service.~~
+   * ~~On the student's ESP32, use the subscribe API provided by the AWS IoT SDK to subscribe to the topic that the camera is publishing to.~~
+   * ~~Once the ESP32 is subscribed to the topic, it will receive any data that is published to that topic by the camera.~~
+   * ~~The student's ESP32 can then process or act on the received data as required.~~
 
-It's important to note that the student's ESP32 should have the necessary permission and authorizations to subscribe to the topic and to receive the messages.
+~~It's important to note that the student's ESP32 should have the necessary permission and authorizations to subscribe to the topic and to receive the messages.~~
+
+One of the method is to add Group2's subscriber devices to AWS IoT Greengrass group in Group1, configure Group2's subscriber to connect to Group1's MQTT broker (Greengrass core) & configure the subscription in the group from Group1's camera to Group2's subscriber;
+
+Another method is to modify Group1's camera such that it publishes to 2 MQTT brokers, one from Group1 & the other from Group2, and each group let their subscribers to connect to their MQTT broker, and configure their AWS IoT Greengrass group accordingly.
