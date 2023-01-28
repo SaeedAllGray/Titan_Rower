@@ -30,6 +30,7 @@
 #include <ArduinoJson.h>
 #include "WiFi.h"
 #include "AWS.h"
+#include "environment.h"
 
 /* The MQTT topics that this device should publish/subscribe to */
 #define AWS_IOT_PUBLISH_TOPIC "tank/pub"
@@ -39,24 +40,64 @@ const String AWS_IOT_SUBSCRIBE_TOPIC[] = {"tank/rover", "tank/target"};
 WiFiClientSecure net = WiFiClientSecure();
 MQTTClient client = MQTTClient(256);
 
+extern Environment env;
+
 myawsclass::myawsclass()
 {
 }
 
 void messageHandler(String &topic, String &payload)
 {
-  Serial.println("incoming: " + topic + " - " + payload);
+  const size_t CAPACITY = JSON_ARRAY_SIZE(MAX_TARGET_PTS * 2);
+  StaticJsonDocument<CAPACITY> doc;
 
   if (topic == "tank/rover")
   {
-    StaticJsonDocument<100> doc; // 50 is too small, ["t"] will be missing
     deserializeJson(doc, payload);
-    int message = doc["x"];
-    Serial.println(message);
-    int message2 = doc["y"];
-    Serial.println(message2);
-    int message3 = doc["t"];
-    Serial.println(message3);
+
+    JsonArray array = doc.as<JsonArray>();
+    for (JsonVariant v : array)
+    {
+      Serial.println(v.as<int>());
+    }
+    if (array.size() == 3)
+    {
+      env.currentPosValid = true;
+      xSemaphoreTake(env.currentPosMutex, portMAX_DELAY);
+      env.currentPos = Coordinate(array[0].as<int>(), array[1].as<int>());
+      env.currentPosAngle = static_cast<float>(array[2].as<int>());
+      xSemaphoreGive(env.currentPosMutex);
+      Serial.println("tank/rover updated");
+    }
+    else
+    {
+      Serial.println("incorrect tank/rover dimension: " + topic + " - " + payload);
+    }
+  }
+  else if (topic == "tank/target")
+  {
+    deserializeJson(doc, payload);
+    JsonArray array = doc.as<JsonArray>();
+    env.targetPath.clear();
+    env.targetPathCurrent = env.targetPath.begin();
+    for (int i = 0; i < array.size() / 2; i++)
+    {
+      int x = array[i * 2].as<int>();
+      int y = array[i * 2 + 1].as<int>();
+      Serial.println(x);
+      Serial.println(y);
+      env.targetPath.push_back(Coordinate(x, y));
+    }
+    Serial.print("tank/target updated: ");
+    for (Coordinate c : env.targetPath)
+    {
+      Serial.printf("(%d, %d) ", (int)c.x, (int)c.y);
+    }
+    Serial.println();
+  }
+  else
+  {
+    Serial.println("unknown incoming msg: " + topic + " - " + payload);
   }
 }
 
@@ -69,8 +110,11 @@ void myawsclass::connectAWS()
 {
 
   WiFi.mode(WIFI_STA);
-  // WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+#if EDUROAM
   WiFi.begin(WIFI_SSID, WPA2_AUTH_PEAP, EAP_ANONYMOUS_IDENTITY, EAP_IDENTITY, EAP_PASSWORD);
+#else
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+#endif
 
   Serial.println("Connecting to Wi-Fi");
 
@@ -99,6 +143,8 @@ void myawsclass::connectAWS()
 
   Serial.println("Connecting to AWS IOT");
 
+  // change keepAlive from 10 to 1800 s
+  client.setOptions(1800, true, 1000);
   while (!client.connect(THINGNAME))
   {
     Serial.print(".");

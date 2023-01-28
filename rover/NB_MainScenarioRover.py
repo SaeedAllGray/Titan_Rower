@@ -64,7 +64,7 @@ certificatePath = myAWSConfig.get_cert_file()
 privateKeyPath = myAWSConfig.get_priv_file()
 clientId = myAWSConfig.get_thing_name()
 topic_rover = myAWSConfig.get_topic("rover")
-topic_targer = myAWSConfig.get_topic("target")
+topic_target = myAWSConfig.get_topic("target")
 useWebsocket=myAWSConfig.useWebsocket
 											 
 
@@ -240,12 +240,14 @@ if __name__ == "__main__":
 					'y':my_rover_coordinates[5][0][1],
 					't':my_rover_coordinates[5][1]}
 				mes_rover = json.dumps(coord_json)
+				myAWSIoTMQTTClient.publish(topic_rover, mes_rover, 1)
 			except KeyError:
 				pass
+			except TypeError:
+				pass
 
-			myAWSIoTMQTTClient.publish(topic_rover, mes_rover, 1)	
 			mes_target = json.dumps({'target': '{}'.format(current_target_coordinate)})		
-			myAWSIoTMQTTClient.publish(topic_targer, mes_target, 1)	
+			myAWSIoTMQTTClient.publish(topic_target, mes_target, 1)	
 			#print("publishing")
 		
 		end=time.time()
