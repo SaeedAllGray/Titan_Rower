@@ -35,7 +35,7 @@
 /* The MQTT topics that this device should publish/subscribe to */
 #define AWS_IOT_PUBLISH_TOPIC "tank/pub"
 // #define AWS_IOT_SUBSCRIBE_TOPIC "tank/target"
-const String AWS_IOT_SUBSCRIBE_TOPIC[] = {"tank/rover", "tank/target"};
+const String AWS_IOT_SUBSCRIBE_TOPIC[] = {"tank/#"};//, "tank/target"};
 
 WiFiClientSecure net = WiFiClientSecure();
 MQTTClient client = MQTTClient(256);
@@ -56,10 +56,7 @@ void messageHandler(String &topic, String &payload)
     deserializeJson(doc, payload);
 
     JsonArray array = doc.as<JsonArray>();
-    for (JsonVariant v : array)
-    {
-      Serial.println(v.as<int>());
-    }
+
     if (array.size() == 3)
     {
       env.currentPosValid = true;
@@ -67,7 +64,7 @@ void messageHandler(String &topic, String &payload)
       env.currentPos = Coordinate(array[0].as<int>(), array[1].as<int>());
       env.currentPosAngle = static_cast<float>(array[2].as<int>());
       xSemaphoreGive(env.currentPosMutex);
-      Serial.println("tank/rover updated");
+      Serial.printf("tank/rover updated: (%d, %d, %d)\r\n", (int)env.currentPos.x, (int)env.currentPos.y, (int)env.currentPosAngle.angle);
     }
     else
     {
@@ -76,24 +73,51 @@ void messageHandler(String &topic, String &payload)
   }
   else if (topic == "tank/target")
   {
+    // put message into targetPath
     deserializeJson(doc, payload);
     JsonArray array = doc.as<JsonArray>();
     env.targetPath.clear();
-    env.targetPathCurrent = env.targetPath.begin();
+    env.targetPathCurrent = 0;
     for (int i = 0; i < array.size() / 2; i++)
     {
       int x = array[i * 2].as<int>();
       int y = array[i * 2 + 1].as<int>();
-      Serial.println(x);
-      Serial.println(y);
       env.targetPath.push_back(Coordinate(x, y));
     }
     Serial.print("tank/target updated: ");
+
+    // initialize targetPath
+    if (env.targetPath.size() > 0)
+    {
+      env.targetPathValid = true;
+    }
+
+    // print targetPath
     for (Coordinate c : env.targetPath)
     {
       Serial.printf("(%d, %d) ", (int)c.x, (int)c.y);
     }
     Serial.println();
+  }
+  else if (topic == "tank/debug")
+  {
+    // debug only, override rover velocity
+    deserializeJson(doc, payload);
+
+    JsonArray array = doc.as<JsonArray>();
+
+    if (array.size() == 2)
+    {
+      env.debugMode = true;
+
+      env.currentVelocity.linear = array[0].as<float>();
+      env.currentVelocity.angular = array[1].as<float>();
+      Serial.printf("tank/debug updated: (%f, %f)\r\n", env.currentVelocity.linear, env.currentVelocity.angular);
+    }
+    else
+    {
+      Serial.println("incorrect tank/debug dimension: " + topic + " - " + payload);
+    }
   }
   else
   {

@@ -231,14 +231,9 @@ if __name__ == "__main__":
 		cv2.imshow("Rectified", warped) #uncomment
 		if connect_to_aws:
 			# mes_rover = json.dumps({'rover': '{}'.format(my_rover_coordinates)})
-
 			# I can't decode the coordinate on ESP32, that's why I changed its format to a simple array
-			# [x, y, theta]
-			# my_rover_coordinates[5] because our code is "ID: 5"
 			try:
-				coord_json = {'x':my_rover_coordinates[5][0][0],
-					'y':my_rover_coordinates[5][0][1],
-					't':my_rover_coordinates[5][1]}
+				coord_json = [my_rover_coordinates[5][0][0], my_rover_coordinates[5][0][1], my_rover_coordinates[5][1]]
 				mes_rover = json.dumps(coord_json)
 				myAWSIoTMQTTClient.publish(topic_rover, mes_rover, 1)
 			except KeyError:
@@ -246,7 +241,9 @@ if __name__ == "__main__":
 			except TypeError:
 				pass
 
-			mes_target = json.dumps({'target': '{}'.format(current_target_coordinate)})		
+			# mes_target = json.dumps({'target': '{}'.format(current_target_coordinate)})	
+			coord_target = [current_target_coordinate[0], current_target_coordinate[1]]
+			mes_target = json.dumps(coord_target)		
 			myAWSIoTMQTTClient.publish(topic_target, mes_target, 1)	
 			#print("publishing")
 		

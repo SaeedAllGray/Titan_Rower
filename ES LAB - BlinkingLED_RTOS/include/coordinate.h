@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <bits/stdc++.h>
+#include "NormalizedAngle.h"
 class Coordinate
 {
 public:
@@ -12,11 +13,12 @@ public:
     Coordinate() : x(-1), y(-1) {}
     Coordinate(float xin, float yin) : x(xin), y(yin) {}
 
-    float angleWithPoint(Coordinate point)
+    NormalizedAngle angleWithPoint(Coordinate point)
     {
         float deltaY = (*this).y - point.y;
         float deltaX = (*this).x - point.x;
-        return atan2(deltaY, deltaX);
+        NormalizedAngle na = NormalizedAngle(atan2(deltaY, deltaX));
+        return na;
     }
     float distanceFromPoint(Coordinate point)
     {
