@@ -50,6 +50,7 @@ import drawScenario
 import shapedetector
 import configureSystem
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+import matplotlib.pyplot as plt
 import json
 from math import pi # for coord_json_rover
 
@@ -276,5 +277,42 @@ if __name__ == "__main__":
 			break
 	cap.release()
 	cv2.destroyAllWindows()
-	
+
+
+
+from rrtplanner import RRTStar, perlin_occupancygrid
+from numpy import array
+
+# Create the occupancy grid
+og = perlin_occupancygrid(size_image_real_scenario[0], size_image_real_scenario[1], 0.33)
+
+# Create an instance of RRTStar
+n = 1200
+r_rewire = 80  # a value large enough for the size of the environment
+rrts = RRTStar(og, n, r_rewire)
+
+# Convert the borders and obstacles into the occupancy grid
+rrts.set_borders(borders_coordinates, resize_ratio_x, resize_ratio_y)
+rrts.set_obstacles(myObstacles.get_coordinates(), resize_ratio_x, resize_ratio_y)
+
+# Convert the start and goal points into the occupancy grid
+xstart = myStart.get_coordinates() / [resize_ratio_x, resize_ratio_y]
+xgoal = current_target_coordinate / [resize_ratio_x, resize_ratio_y]
+
+# Plan a path from start to goal
+T, gv = rrts.plan(xstart, xgoal)
+
+# Get the path as a list of points
+path = rrts.route2gv(T, gv)
+path_pts = rrts.vertices_as_ndarray(T, path)
+print(path_pts)
+
+# Plot the occupancy grid, start and goal points, RRT tree, and path
+
+fig = plt.figure()
+ax = fig.add_subplot()
+rrts.plot_og(ax, og)
+rrts.plot_start_goal(ax, xstart, xgoal)
+rrts.plot_rrt_lines(ax, T)
+rrts.plot_path(ax, path_pts)
 	
