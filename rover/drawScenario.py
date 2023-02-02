@@ -222,6 +222,8 @@ class Targets():
 		drawable.drawObject(mytarget,img )
 		return self.img	
 
+	def get_current_target(self):
+		return self.current_target
 
 
 

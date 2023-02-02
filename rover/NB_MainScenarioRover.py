@@ -51,6 +51,7 @@ import shapedetector
 import configureSystem
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 import json
+from math import pi # for coord_json_rover
 
 #*** SYSTEM CONFIGURATION
 #-----------------------------------------------------------------
@@ -234,6 +235,17 @@ if __name__ == "__main__":
 			# I can't decode the coordinate on ESP32, that's why I changed its format to a simple array
 			try:
 				coord_json = [my_rover_coordinates[5][0][0], my_rover_coordinates[5][0][1], my_rover_coordinates[5][1]]
+
+				# change the coordinate to rover's coordinate
+				# X & Y: mm
+				#        multiply by 1300 -> game field is 1300 mm wide
+				#        480 is the dimension in this programme, defined as virtual_scenario_image_size in configureSystem.py
+				coord_json[0] = coord_json[0] * 1300 / 480
+				# this code use top-left as (0, 0), but rover use bottom-left as (0, 0)
+				coord_json[1] = (480 - coord_json[1]) * 1300 / 480
+				# angle: degree [0, 360] -> radian [-PI, PI]
+				coord_json[2] = (coord_json[2] * pi * 2 / 360 + pi) % (pi * 2) - pi
+
 				mes_rover = json.dumps(coord_json)
 				myAWSIoTMQTTClient.publish(topic_rover, mes_rover, 1)
 			except KeyError:
@@ -241,8 +253,13 @@ if __name__ == "__main__":
 			except TypeError:
 				pass
 
-			# mes_target = json.dumps({'target': '{}'.format(current_target_coordinate)})	
-			coord_target = [current_target_coordinate[0], current_target_coordinate[1]]
+			# print(target_list)
+			# print()
+			coord_target = [myTargets.get_current_target(), current_target_coordinate[0], current_target_coordinate[1]]
+			# change the coordinate to rover's coordinate
+			coord_target[1] = coord_target[1] * 1300 / 480
+			coord_target[2] = (480 - coord_target[2]) * 1300 / 480
+
 			mes_target = json.dumps(coord_target)		
 			myAWSIoTMQTTClient.publish(topic_target, mes_target, 1)	
 			#print("publishing")

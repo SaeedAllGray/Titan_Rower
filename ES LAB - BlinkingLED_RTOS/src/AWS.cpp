@@ -35,12 +35,14 @@
 /* The MQTT topics that this device should publish/subscribe to */
 #define AWS_IOT_PUBLISH_TOPIC "tank/pub"
 // #define AWS_IOT_SUBSCRIBE_TOPIC "tank/target"
-const String AWS_IOT_SUBSCRIBE_TOPIC[] = {"tank/#"};//, "tank/target"};
+const String AWS_IOT_SUBSCRIBE_TOPIC[] = {"tank/#"}; //, "tank/target"};
 
 WiFiClientSecure net = WiFiClientSecure();
 MQTTClient client = MQTTClient(256);
 
 extern Environment env;
+
+myawsclass awsobject = myawsclass(); /* creating an object of class aws */
 
 myawsclass::myawsclass()
 {
@@ -61,10 +63,13 @@ void messageHandler(String &topic, String &payload)
     {
       env.currentPosValid = true;
       xSemaphoreTake(env.currentPosMutex, portMAX_DELAY);
-      env.currentPos = Coordinate(array[0].as<int>(), array[1].as<int>());
-      env.currentPosAngle = static_cast<float>(array[2].as<int>());
+      env.currentPos = Coordinate(array[0].as<float>(), array[1].as<float>());
+      float angle = static_cast<float>(array[2].as<float>());
+      env.currentPosAngle = env.roverFlipped ? angle + PI : angle;
       xSemaphoreGive(env.currentPosMutex);
+      // Serial.printf("pos: (%.2f, %.2f, %.4f);\t", env.currentPos.x, env.currentPos.y, env.currentPosAngle.angle);
       Serial.printf("tank/rover updated: (%d, %d, %d)\r\n", (int)env.currentPos.x, (int)env.currentPos.y, (int)env.currentPosAngle.angle);
+
     }
     else
     {
@@ -74,25 +79,41 @@ void messageHandler(String &topic, String &payload)
   else if (topic == "tank/target")
   {
     // put message into targetPath
+    // JSON format: [id, pt0_x, pt0_y, pt1_x, pt1_y...]
+    
     deserializeJson(doc, payload);
     JsonArray array = doc.as<JsonArray>();
+
+    // update only if id is larger than previous id
+    int id = array[0].as<int>();
+    if (id <= awsobject.targetId)
+    {
+      Serial.printf("tank/target id not larger than previous: previous: %d, this: %d\r\n", awsobject.targetId, id);
+      return;
+    }
+    awsobject.targetId = id;
+
+    // update message payload into env.targetPath
+    xSemaphoreTake(env.targetPathMutex, portMAX_DELAY);
     env.targetPath.clear();
     env.targetPathCurrent = 0;
     for (int i = 0; i < array.size() / 2; i++)
     {
-      int x = array[i * 2].as<int>();
-      int y = array[i * 2 + 1].as<int>();
+      float x = array[i * 2 + 1].as<float>();
+      float y = array[i * 2 + 2].as<float>();
       env.targetPath.push_back(Coordinate(x, y));
+      // Serial.printf("%s (%d, %d)\r\n", payload, x, y);
     }
-    Serial.print("tank/target updated: ");
 
     // initialize targetPath
     if (env.targetPath.size() > 0)
     {
       env.targetPathValid = true;
     }
+    xSemaphoreGive(env.targetPathMutex);
 
     // print targetPath
+    Serial.print("tank/target updated: ");
     for (Coordinate c : env.targetPath)
     {
       Serial.printf("(%d, %d) ", (int)c.x, (int)c.y);
@@ -112,12 +133,25 @@ void messageHandler(String &topic, String &payload)
 
       env.currentVelocity.linear = array[0].as<float>();
       env.currentVelocity.angular = array[1].as<float>();
+      if (abs(env.currentVelocity.linear) > env.MAX_LINEAR)
+      {
+        env.currentVelocity.linear = env.currentVelocity.linear > 0 ? env.MAX_LINEAR : -env.MAX_LINEAR;
+      }
+      if (abs(env.currentVelocity.angular) > env.MAX_ANGULAR)
+      {
+        env.currentVelocity.angular = env.currentVelocity.angular > 0 ? env.MAX_ANGULAR : -env.MAX_ANGULAR;
+      }
       Serial.printf("tank/debug updated: (%f, %f)\r\n", env.currentVelocity.linear, env.currentVelocity.angular);
     }
     else
     {
       Serial.println("incorrect tank/debug dimension: " + topic + " - " + payload);
     }
+  }
+  else if (topic == "tank/target_reset")
+  {
+    awsobject.targetId = -1;
+    Serial.printf("tank/target reset: %d\r\n", awsobject.targetId);
   }
   else
   {
@@ -220,5 +254,3 @@ void myawsclass::publishMessage(int16_t sensorValue)
 
 //   client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
 // }
-
-myawsclass awsobject = myawsclass(); /* creating an object of class aws */

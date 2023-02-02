@@ -19,7 +19,6 @@ void taskLed(void *parameter);
 void vTimerCallbackKinematics(xTimerHandle pxTimer);
 void taskAws(void *parameter);
 
-myawsclass aws = myawsclass();
 Environment env = Environment();
 
 void setup()
@@ -40,7 +39,7 @@ void setup()
   env.motor.SETUP();
 
   // connect Wi-Fi & AWS
-  aws.connectAWS();
+  awsobject.connectAWS();
   led_mode = led_mode_t::SLOW;
 
   timerHndl = xTimerCreate(
@@ -83,7 +82,7 @@ void loop()
   // // I don't know why but the value sometimes become around -1000
   // Serial.printf("\r% 5d % 5d % 5d", value[0], value[1], value[2]);
 
-  // aws.publishMessage(value[0], value[1], value[2]);
+  // awsobject.publishMessage(value[0], value[1], value[2]);
 
   // Serial.println(env.currentPos.x);
   // Serial.println(env.currentPos.y);
@@ -119,9 +118,12 @@ void vTimerCallbackKinematics(xTimerHandle pxTimer)
   {
     xSemaphoreTake(env.currentPosMutex, portMAX_DELAY);
 
-    env.currentPos.x += env.currentVelocity.linear * cos(env.currentPosAngle.angle) * env.TIMER_PERIOD / 1000;
-    env.currentPos.y += env.currentVelocity.linear * sin(env.currentPosAngle.angle) * env.TIMER_PERIOD / 1000;
-    env.currentPosAngle += env.currentVelocity.angular * env.TIMER_PERIOD / 1000;
+    // TODO: dirty trick, * 0.87 because in reality it move less
+    env.currentPos.x += env.currentVelocity.linear * cos(env.currentPosAngle.angle) * env.TIMER_PERIOD / 1000 * 0.87;
+    env.currentPos.y += env.currentVelocity.linear * sin(env.currentPosAngle.angle) * env.TIMER_PERIOD / 1000 * 0.87;
+    // TODO: I don't know why but it need a /2 here
+    // TODO: dirty trick, * 1.1 because in reality it move more
+    env.currentPosAngle += env.currentVelocity.angular * env.TIMER_PERIOD / 1000 / 2 * 1.1;
 
     xSemaphoreGive(env.currentPosMutex);
   }
@@ -135,33 +137,85 @@ void vTimerCallbackKinematics(xTimerHandle pxTimer)
   }
   else
   {
-    // calculate desired velocity based on current position
-
     if (env.currentPosValid && env.targetPathValid)
     {
+      // check if current target point reached
+
+      xSemaphoreTake(env.targetPathMutex, portMAX_DELAY);
+
       Coordinate v = env.targetPath[env.targetPathCurrent];
-      // Serial.printf("target: %f, %f, %f, %f\r\n", v.x, v.y, v.distanceFromPoint(env.currentPos), v.angleWithPoint(env.currentPos));
-
-      // angular
+      // error: diff. btw current position & target point
+      float errorLinear = v.distanceFromPoint(env.currentPos);
       float errorAngular = (env.currentPosAngle - v.angleWithPoint(env.currentPos)).angle;
-      float tmpAngular = abs(errorAngular) < env.ANGLE_MARGIN ? 0 : env.kP_ANGULAR * (-errorAngular);
-      desiredAngular = tmpAngular < env.MAX_ANGULAR ? tmpAngular : env.MAX_ANGULAR;
-      // Serial.printf("%.2f %.2f %.2f\r\n", errorAngular, v.angleWithPoint(env.currentPos).angle, desiredAngular);
+      bool reachedFinalDestination = false;
 
-      // linear
-      if (abs(errorAngular) > env.ROTATE_MODE_THOLD)
+      while (errorLinear < env.DISTANCE_MARGIN)
       {
-        // Rotate mode
+        // Serial.printf("target: %d %d;\r\n", env.targetPathCurrent, env.targetPath.size());
+
+        // current target point reached
+        if (env.targetPathCurrent >= env.targetPath.size() - 1)
+        {
+          // already in final destination
+          reachedFinalDestination = true;
+          Serial.print("DONE ");
+
+          break;
+        }
+        else
+        {
+          // Start next point
+          env.targetPathCurrent++;
+          v = env.targetPath[env.targetPathCurrent];
+          errorLinear = v.distanceFromPoint(env.currentPos);
+          errorAngular = (env.currentPosAngle - v.angleWithPoint(env.currentPos)).angle;
+
+          Serial.printf("target: %d/%d (%.0f, %.0f)\r\n", env.targetPathCurrent + 1, env.targetPath.size(), v.x, v.y);
+        }
+      }
+
+      xSemaphoreGive(env.targetPathMutex);
+
+      // calculate desired velocity based on errorLinear & errorAngular
+
+      if (reachedFinalDestination)
+      {
         desiredLinear = 0;
-        Serial.print("R ");
+        desiredAngular = 0;
       }
       else
       {
-        // Forward mode
-        float errorLinear = v.distanceFromPoint(env.currentPos);
-        float tmpLinear = errorLinear < env.DISTANCE_MARGIN ? 0 : env.kP_LINEAR * (errorLinear);
-        desiredLinear = tmpLinear < env.MAX_LINEAR ? tmpLinear : env.MAX_LINEAR;
-        Serial.print("F ");
+        // if abs(errorAngular) > PI / 2 + deadzone (a small number), then flip
+        // + deadzone, otherwise it may flip repeatedly
+        const float DEADZONE = 10 * 2 * PI / 360; // 5 deg
+        if (abs(errorAngular) > PI / 2 + DEADZONE)
+        {
+          xSemaphoreTake(env.currentPosMutex, portMAX_DELAY);
+          env.currentPosAngle += PI;
+          errorAngular = (env.currentPosAngle - v.angleWithPoint(env.currentPos)).angle;
+          env.roverFlipped = !env.roverFlipped;
+          xSemaphoreGive(env.currentPosMutex);
+        }
+
+        // Linear
+        if (abs(errorAngular) > env.ROTATE_MODE_THOLD)
+        {
+          // Rotate mode
+          desiredLinear = 0;
+          Serial.print("R ");
+        }
+        else
+        {
+          // Forward mode
+          float tmpLinear = env.kP_LINEAR * (errorLinear);
+          desiredLinear = constrain(tmpLinear, -env.MAX_LINEAR, env.MAX_LINEAR);
+          Serial.print("F ");
+        }
+
+        // Angular
+        float tmpAngular = abs(errorAngular) < env.ANGLE_MARGIN ? 0 : env.kP_ANGULAR * (-errorAngular);
+        desiredAngular = constrain(tmpAngular, -env.MAX_ANGULAR, env.MAX_ANGULAR);
+        // Serial.printf("%.2f %.2f %.2f\r\n", errorAngular, v.angleWithPoint(env.currentPos).angle, desiredAngular);
       }
     }
   }
@@ -174,8 +228,18 @@ void vTimerCallbackKinematics(xTimerHandle pxTimer)
   float desiredSpeed[2];                           //, actualSpeed[2];
   desiredSpeed[0] = desiredLinear + speedDiff / 2; // left
   desiredSpeed[1] = desiredLinear - speedDiff / 2; // right
+
+  // // if roverFlipped, the rover should move in the opposite direction
+  // for (int i = 0; i < 2; i++)
+  // {
+  //   if (env.roverFlipped)
+  //   {
+  //     desiredSpeed[i] = -desiredSpeed[i];
+  //   }
+  // }
+
+  // cap speed if exceed maximum
   for (int i = 0; i < 2; i++)
-  {
     if (desiredSpeed[i] > env.MAX_LINEAR)
     {
       desiredSpeed[i] = env.MAX_LINEAR;
@@ -183,7 +247,7 @@ void vTimerCallbackKinematics(xTimerHandle pxTimer)
       desiredLinear = (desiredSpeed[0] + desiredSpeed[1]) / 2;
       break; // only 1 of the 2 wheel may exist the max speed
     }
-  }
+
   env.setMotorSpeed(desiredSpeed); //, actualSpeed);
 
   // // recalculate velocity with motor speed (rounding error)
@@ -202,8 +266,8 @@ void taskAws(void *parameter)
 
   while (true)
   {
-    // aws.publishMessage(8964);
-    aws.stayConnected();
+    // awsobject.publishMessage(8964);
+    awsobject.stayConnected();
     int delay_ms = 10; // 1 ms does work, would get SSL errors
     vTaskDelay(delay_ms / portTICK_PERIOD_MS);
   }
