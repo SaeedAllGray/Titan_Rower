@@ -23,6 +23,8 @@ class myawsclass {
     void publishMessage(int16_t sensorValue);     /* Publish the values of the sensors */
     // void publishMessage(int16_t sen0, int16_t sen1, int16_t sen2);
     void stayConnected();                         /* Maintain the connection */
+
+    int targetId = -1; // for messageHandler of "tank/target"
 };
 
 extern myawsclass awsobject;
