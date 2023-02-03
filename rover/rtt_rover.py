@@ -93,7 +93,7 @@ class PathPlanner:
                         break
                 i = i + 1
             self.xstart = new_pt
-            print("{} -> {}".format(origin_pt, new_pt))
+            print("Start: {} -> {}".format(origin_pt, new_pt))
 
         if self.og[self.xgoal[0]][self.xgoal[1]] == 1:
             origin_pt = self.xgoal
@@ -111,7 +111,7 @@ class PathPlanner:
                         break
                 i = i + 1
             self.xgoal = new_pt
-            print("{} -> {}".format(origin_pt, new_pt))
+            print("Goal: {} -> {}".format(origin_pt, new_pt))
 
         # start RRT*
         rrts = RRTStar(self.og, self.n, self.r_rewire)
