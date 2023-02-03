@@ -131,13 +131,12 @@ The Secrets.h file is a header file
 2. How did they use the AWS Library?
 
 AWS library for ESP32 can be used to connect the device to AWS IoT and interact with other AWS services.
-* ~~The library can be downloaded and installed from the official AWS GitHub repository.~~
 * Once the library is installed, the developer can use the provided API to connect to AWS IoT, publish and subscribe to MQTT topics, access other AWS services like S3 and more.
 * ~~The Secrets.h file should include AWS Root CA certificate, device private key and public key as well as the endpoint for the authentication and secure communication process.~~
 
 3. What are the topics esp32/rover and esp32/target being used for?
 
-* "esp32/rover" topic is ~~likely used for publishing sensor data and current status of the Rover.~~
+* "esp32/rover" topic is ~~used for publishing sensor data and current status of the Rover.~~
  * source: published by the python programme in the VirtualBox VM
  * message: position & direction with respective to the game field
    * from image processing of the webcam image
