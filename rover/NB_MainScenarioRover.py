@@ -271,6 +271,7 @@ if __name__ == "__main__":
 				coord_json[0] = coord_json[0] * 1300 / 480
 				# this code use top-left as (0, 0), but rover use bottom-left as (0, 0)
 				coord_json[1] = (480 - coord_json[1]) * 1300 / 480
+				# coord_json[1] = coord_json[1] * 1300 / 480
 				# angle: degree [0, 360] -> radian [-PI, PI]
 				coord_json[2] = (coord_json[2] * pi * 2 / 360 + pi) % (pi * 2) - pi
 
@@ -291,7 +292,8 @@ if __name__ == "__main__":
 			for i in range(1, len(target_paths[idx])):
 				# change the coordinate to rover's coordinate
 				coord_target.append(target_paths[idx][i][0] * 1300 / 480)
-				coord_target.append(target_paths[idx][i][1] * 1300 / 480)
+				# coord_target.append(target_paths[idx][i][1] * 1300 / 480)
+				coord_target.append((480 - target_paths[idx][i][1]) * 1300 / 480)
 
 			mes_target = json.dumps(coord_target)		
 			myAWSIoTMQTTClient.publish(topic_target, mes_target, 1)	

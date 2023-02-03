@@ -12,9 +12,10 @@ class PathPlanner:
     SCALE_RL = DIM_ALG / 1300
     # 200 * 100 mm (RL)
     # 250 * 125 mm (scenario1.jpg)
-    OBS_W_DIV2 = int(200 * SCALE_RL / 2)
-    OBS_H_DIV2 = int(100 * SCALE_RL / 2)
-    MARGIN = 5
+    OBS_W_DIV2 = int(250 * SCALE_RL / 2)
+    OBS_H_DIV2 = int(125 * SCALE_RL / 2)
+    MARGIN = 0
+    # MARGIN = 30
     ROVER_RADIUS = int((93 / sqrt(2) + MARGIN) * SCALE_RL)
 
     # RTT* specific
