@@ -29,8 +29,8 @@ class Rectangle():
 
 
 class Line(): 
-	color = (0, 230, 0) 
-	thickness = 5
+	color = (0, 127, 255) 
+	thickness = 2
 	def __init__(self,x ,y):
 		self._x = x
 		self._y = y  

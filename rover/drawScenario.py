@@ -227,6 +227,17 @@ class Targets():
 
 
 
+class Lines():
+	def __init__(self):
+		pass
+
+	def draw_lines(self, img, lines):
+		self.img = img
+		for i in range(1, len(lines)):
+			mytarget = drawable.Line((lines[i - 1][0], lines[i - 1][1]), (lines[i][0], lines[i][1]))
+			drawable.drawObject(mytarget, img)
+		return self.img
+
 
 class StartPoint():
 	length=30 #length box/arrow in pixels

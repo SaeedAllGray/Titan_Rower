@@ -53,6 +53,9 @@ from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 import json
 from math import pi # for coord_json_rover
 
+import pickle # for rtt_rover.py
+import subprocess # for rtt_rover.py
+
 #*** SYSTEM CONFIGURATION
 #-----------------------------------------------------------------
 myScenarioConfig=configureSystem.configureScenario() #use this object to apply the configurations 
@@ -142,7 +145,8 @@ if __name__ == "__main__":
 			   
 	#Init variables:
 
-	image_scenario, obstacles_scenario, targets_scenario, start_point=sd.get_shapes_coordinates(image_scenario)
+	# obstacles_HV_scenario: same as obstacles_scenario, but with Horizontal or Vertical classified
+	image_scenario, obstacles_scenario, obstacles_HV_scenario, targets_scenario, start_point=sd.get_shapes_coordinates(image_scenario)
 	cv2.imshow("Image_scenario", image_scenario)
 	size_image_virtual_scenario=tuple(image_scenario.shape[1::-1])
 	print("image_virtual_scenario_size: ",size_image_virtual_scenario)	
@@ -168,6 +172,7 @@ if __name__ == "__main__":
 	myObstacles=drawScenario.Obstacles() #creates an object of the class Obstacles
 	myTargets= drawScenario.Targets() #creates an object of the class Targets
 	myStart= drawScenario.StartPoint() #creates an object of the class StartPoint	
+	myLines = drawScenario.Lines()
 	border_list_default=[(20,10),(120,10),(120,120),(20,120)]	#default value for the border coordinates (just in case)
 	current_target_coordinate=None #Init the target coordinate
 	
@@ -195,6 +200,24 @@ if __name__ == "__main__":
 			
 		time.sleep(0.2)
 	
+	# use RTT* to find path
+	target_list = myTargets.get_target_list()
+	print(target_list)
+
+	with open('target_list.pickle', 'wb') as file:
+		pickle.dump(target_list, file)
+	with open('obstacles_HV_scenario.pickle', 'wb') as file:
+		pickle.dump(obstacles_HV_scenario, file)
+	with open('start_point.pickle', 'wb') as file:
+		pickle.dump(start_point, file)
+
+	subprocess.call(['bash', 'rtt.sh'])
+
+	target_paths = []
+	with open('target_paths.pickle', 'rb') as file:
+		target_paths = pickle.load(file)
+	print(target_paths)
+
 #once we detected the working area, display the scenario and start game	
 	continue_game=True
 	while(True):
@@ -229,6 +252,10 @@ if __name__ == "__main__":
 					print ("no rover_marker in image")														
 						
 				#print("Target:", current_target_coordinate," my rover: ", my_rover_coordinates) #prints {"markerID":[(x coord,y coord), angle]} of the rover in the rectified ROI image
+
+		# draw RTT* paths
+		warped = myLines.draw_lines(warped, target_paths[myTargets.get_current_target()])
+
 		cv2.imshow("Rectified", warped) #uncomment
 		if connect_to_aws:
 			# mes_rover = json.dumps({'rover': '{}'.format(my_rover_coordinates)})
@@ -253,12 +280,17 @@ if __name__ == "__main__":
 			except TypeError:
 				pass
 
-			# print(target_list)
-			# print()
-			coord_target = [myTargets.get_current_target(), current_target_coordinate[0], current_target_coordinate[1]]
-			# change the coordinate to rover's coordinate
-			coord_target[1] = coord_target[1] * 1300 / 480
-			coord_target[2] = (480 - coord_target[2]) * 1300 / 480
+			# # pack coord_target to be sent to rover
+			# coord_target = [myTargets.get_current_target(), current_target_coordinate[0], current_target_coordinate[1]]
+			# # change the coordinate to rover's coordinate
+			# coord_target[1] = coord_target[1] * 1300 / 480
+			# coord_target[2] = (480 - coord_target[2]) * 1300 / 480
+			idx = myTargets.get_current_target()
+			coord_target = [idx] # 1st entity is the index of targets
+			for i in range(1, len(target_paths[idx])):
+				# change the coordinate to rover's coordinate
+				coord_target.append(target_paths[idx][i][0] * 1300 / 480)
+				coord_target.append(target_paths[idx][i][1] * 1300 / 480)
 
 			mes_target = json.dumps(coord_target)		
 			myAWSIoTMQTTClient.publish(topic_target, mes_target, 1)	

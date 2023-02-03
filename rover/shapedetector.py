@@ -34,7 +34,11 @@ class ShapeDetector:
 			ar = w / float(h)
 			# a square will have an aspect ratio that is approximately
 			# equal to one, otherwise, the shape is a rectangle
-			shape = "obstacle" if ar >= 0.95 and ar <= 1.05 else "obstacle"
+			# print("obstacle ar: ({}, {}) = {}".format(x, y, ar))
+			
+			# shape = "obstacle" if ar >= 0.95 and ar <= 1.05 else "obstacle"
+			# distinguish between horizontal & vertical rectangle
+			shape = "obstacleH" if ar >= 1.3 else "obstacleV"
 		# if the shape is a pentagon, it will have 5 vertices
 		elif len(approx) == 5:
 			shape = "target"
@@ -45,6 +49,7 @@ class ShapeDetector:
 		return shape
 	def get_shapes_coordinates(self, image):
 		obstacles_scenario=[]
+		obstacles_HV_scenario=[] # horizontal or vertical
 		targets_scenario=[]
 		starting_point=[]
 	
@@ -88,8 +93,12 @@ class ShapeDetector:
 			cv2.putText(image, str(cX)+","+str(cY), (cX, cY), cv2.FONT_HERSHEY_SIMPLEX,
 				0.5, (255, 255, 255), 2) #puts the text of the coord in the center of each form
 			# show the output image
-			if shape == "obstacle":
-				obstacles_scenario. append((cX-8,cY+8)) # "8" pixels to locate the cross in the center of the image
+			if shape == "obstacleH":
+				obstacles_scenario.append((cX-8,cY+8)) # "8" pixels to locate the cross in the center of the image
+				obstacles_HV_scenario.append((cX-8, cY+8, "obstacleH"))
+			elif shape == "obstacleV":
+				obstacles_scenario.append((cX-8,cY+8)) # "8" pixels to locate the cross in the center of the image
+				obstacles_HV_scenario.append((cX-8, cY+8, "obstacleV"))
 			elif shape == "target":
 				targets_scenario. append((cX,cY))
 			elif shape == "triangle":
@@ -98,7 +107,7 @@ class ShapeDetector:
 				print ("detected weird shape: ", shape)
 				
 			
-		return image, obstacles_scenario, targets_scenario, starting_point
+		return image, obstacles_scenario, obstacles_HV_scenario, targets_scenario, starting_point
 		
 		
 
